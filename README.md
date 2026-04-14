@@ -17,6 +17,7 @@ Automated vehicle traffic intelligence from Sentinel-2 satellite imagery. No sen
 ---
 
 </div>
+<img width="1714" height="1070" alt="Image" src="https://github.com/user-attachments/assets/5ddbc0d3-05d8-4058-bde1-3e2f60572e02" />
 
 ## What is this?
 
