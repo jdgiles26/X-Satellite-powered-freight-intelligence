@@ -321,7 +321,7 @@ MIT.
 
 <div align="center">
 
-**Free satellite data. Published science. The roads tell the story.**
+
 
 *DrishX, from the Sanskrit drishti: sight, vision, perspective.*
 
