@@ -285,8 +285,7 @@ Roads: [OpenStreetMap](https://www.openstreetmap.org/) via Overpass API.
 
 MIT.
 
-RF model (rf_model.pickle) may have its own terms from S2TruckDetect.
-Sentinel-2 imagery: [Copernicus Open Access License](https://open.esa.int/copernicus-sentinel-satellite-imagery-under-open-licence/).
+
 
 ---
 
