@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DrishX | Logistics Intelligence Hub</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Mapping -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-satellite-dish"></i></div>
+                <div class="logo-text">DRISH<span>X</span></div>
+            </div>
+            <nav>
+                <button class="nav-item" data-view="dashboard">
+                    <i class="fas fa-satellite"></i> Operations
+                </button>
+                <button class="nav-item" data-view="trends">
+                    <i class="fas fa-chart-line"></i> Tactical Trends
+                </button>
+                <button class="nav-item" data-view="settings">
+                    <i class="fas fa-link"></i> Copernicus Link
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="pulse"></span>
+                    <span>System Online</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="view-title">Operations</h1>
+                    <p id="view-subtitle" class="text-muted">Orbital Logistics Monitoring Terminal</p>
+                </div>
+                <div class="header-right">
+                    <div id="gti-display" class="threat-index">
+                        <span class="label">Spectral Integrity</span>
+                        <span class="value">Active</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- View Sections -->
+            <section id="dashboard-view" class="view">
+                <div class="map-viewport">
+                    <div id="main-map"></div>
+                    
+                    <!-- Tactical HUD Overlays -->
+                    <div class="hud-overlay-top">
+                        <div class="search-box glass-panel">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="map-search-input" placeholder="Coordinate Search (e.g. Frankfurt)...">
+                            <button id="execute-search" class="btn btn-search">Identify</button>
+                            <div id="search-results-dropdown" class="search-dropdown hidden"></div>
+                        </div>
+                    </div>
+
+                    <div class="hud-overlay-left">
+                        <div class="card glass-panel missions-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-crosshairs text-primary"></i> Mission Parameters</h3>
+                            </div>
+                            <div class="mission-presets">
+                                <div class="control-group mb-2">
+                                    <label class="hud-label">Temporal Depth</label>
+                                    <select id="mission-months" class="hud-select">
+                                        <option value="1">1 Month</option>
+                                        <option value="3">3 Months</option>
+                                        <option value="4" selected>4 Months (Default)</option>
+                                        <option value="6">6 Months</option>
+                                        <option value="12">1 Year</option>
+                                        <option value="24">2 Years</option>
+                                        <option value="36">3 Years</option>
+                                        <option value="48">4 Years</option>
+                                    </select>
+                                </div>
+                                <div class="control-group mb-2">
+                                    <label class="hud-label">Observation Depth</label>
+                                    <select id="mission-frames" class="hud-select">
+                                        <option value="5">Fast Scan</option>
+                                        <option value="10" selected>Balanced</option>
+                                        <option value="25">Deep Scan</option>
+                                        <option value="50">Strategic Audit</option>
+                                        <option value="1000">MAX Density</option>
+                                    </select>
+                                </div>
+                                <div class="hud-buttons">
+                                    <button id="draw-aoi" class="btn btn-hud-primary">
+                                        <i class="fas fa-vector-square"></i> Draw AOI
+                                    </button>
+                                    <button id="toggle-satellite" class="btn btn-hud-secondary">
+                                        <i class="fas fa-layer-group"></i> Layer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hud-overlay-right">
+                        <div class="card glass-panel feed-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-bell text-alert"></i> Signal Feed</h3>
+                                <button id="refresh-feed" class="btn-icon"><i class="fas fa-sync"></i></button>
+                            </div>
+                            <div id="alert-feed-compact" class="feed-container scrollable">
+                                <div class="loading-state">Syncing spectral link...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- New Tactical Intel Drawer -->
+                    <div id="intel-drawer" class="hud-overlay-right hidden">
+                        <div class="card glass-panel intel-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-microscope text-accent"></i> Target Intel Profile</h3>
+                                <button id="close-intel" class="btn-icon"><i class="fas fa-times"></i></button>
+                            </div>
+                            <div id="intel-content" class="intel-body scrollable">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="trends-view" class="view hidden">
+                <div class="strategic-dashboard">
+                    <div class="analytics-top-bar glass-panel">
+                        <div class="selector-group">
+                            <label class="hud-label">Comparative Correlation</label>
+                            <div id="mission-comparison-selector" class="mission-checklist-hud">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                        <div class="date-filter-group">
+                            <div class="input-block">
+                                <label class="hud-label">Window Start</label>
+                                <input type="date" id="trend-from" class="hud-input">
+                            </div>
+                            <div class="input-block">
+                                <label class="hud-label">Window End</label>
+                                <input type="date" id="trend-to" class="hud-input">
+                            </div>
+                            <button id="refresh-trends" class="btn btn-hud-primary">Update Intelligence</button>
+                        </div>
+                    </div>
+                    
+                    <div class="strategic-grid">
+                        <div class="card glass-panel chart-card full-span">
+                            <div class="card-header">
+                                <h3><i class="fas fa-chart-area text-accent"></i> Temporal Logistics Signature</h3>
+                            </div>
+                            <div class="chart-viewport">
+                                <canvas id="trend-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="stat-row">
+                            <div class="card glass-panel mini-stat">
+                                <span class="stat-label">Total Volume</span>
+                                <span id="stat-total" class="stat-value">0</span>
+                                <span class="stat-unit">S2 Detections</span>
+                            </div>
+                            <div class="card glass-panel mini-stat accent-blue">
+                                <span class="stat-label">Active Profiles</span>
+                                <span id="stat-avg" class="stat-value">0</span>
+                                <span class="stat-unit">Correlated</span>
+                            </div>
+                            <div class="card glass-panel mini-stat">
+                                <span class="stat-label">Operational Coverage</span>
+                                <span id="stat-peak" class="stat-value">--</span>
+                                <span class="stat-unit">Territory</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Detailed Site View (Modal/Overlay) -->
+            <div id="site-overlay" class="overlay hidden">
+                <div class="overlay-content">
+                    <button class="close-overlay"><i class="fas fa-times"></i></button>
+                    <div id="site-detail-container"></div>
+                </div>
+            </div>
+
+            <!-- Progress HUD (Mission Intelligence Progress) -->
+            <div id="progress-hud" class="overlay hidden">
+                <div class="hud-center-content">
+                    <div class="hud-header">
+                        <i class="fas fa-satellite-dish pulse-bright"></i>
+                        <span>ACTIVE MISSION TELEMETRY</span>
+                    </div>
+                    <div class="hud-main">
+                        <div class="progress-bar-container">
+                            <div id="hud-progress-bar" class="progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-stats">
+                            <span id="hud-step-text">Initializing satellite downlink...</span>
+                            <span id="hud-percent-text">0%</span>
+                        </div>
+                        <div id="hud-log" class="hud-log-console">
+                            <!-- Streamed logs appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Settings View (Copernicus Link) -->
+            <section id="settings-view" class="view hidden">
+                <div class="command-portal-container">
+                    <div class="command-portal">
+                        <div class="portal-header">
+                            <i class="fas fa-satellite-dish portal-icon"></i>
+                            <h2>Copernicus Orbital Access</h2>
+                            <p>Link your CDS credentials to enable mission-grade telemetry.</p>
+                        </div>
+
+                        <div class="portal-body">
+                            <div class="auth-box">
+                                <div class="input-group-cyber mb-4">
+                                    <label>COPERNICUS CLIENT ID</label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-user-shield"></i>
+                                        <input type="password" id="copernicus-id" placeholder="00000000-0000-0000-0000-000000000000">
+                                    </div>
+                                </div>
+
+                                <div class="input-group-cyber mb-4">
+                                    <label>COPERNICUS CLIENT SECRET</label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-key"></i>
+                                        <input type="password" id="copernicus-secret" placeholder="••••••••••••••••••••••••••••">
+                                    </div>
+                                </div>
+
+                                <button id="save-auth" class="btn-orbital-connect">
+                                    <span class="btn-text">Establish Orbital Link</span>
+                                    <div class="orbital-ring"></div>
+                                </button>
+
+                                <div id="auth-status" class="portal-status-msg mt-3"></div>
+                            </div>
+                            
+                            <div class="setup-hint mt-4">
+                                <p>Don't have your orbital keys yet? 
+                                   <a href="https://shapps.dataspace.copernicus.eu/dashboard/#/" target="_blank" class="hint-link">
+                                       Visit Copernicus Dashboard <i class="fas fa-external-link-alt"></i>
+                                   </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="app.js"></script>
+</body>
+</html>

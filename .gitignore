@@ -1,0 +1,27 @@
+# DrishX Security & Data Exclusion
+
+# Credentials
+.env
+
+# Mission Data (Excludes large satellite imagery and detections)
+drishx_data/
+osm_cache/
+sh_cache/
+
+# Intelligence Models
+# Tracked for CLI deployment (94MB)
+# rf_model.pickle
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.venv
+env/
+venv/
+ENV/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+.ipynb_checkpoints/

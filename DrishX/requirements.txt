@@ -1,0 +1,19 @@
+# DrishX Tactical Dependencies
+
+# Backend Engine
+fastapi
+uvicorn
+python-dotenv
+requests
+pydantic
+
+# Geospatial & Orbital Logic
+sentinelhub
+osmnx
+geopandas
+shapely
+imageio
+numpy
+
+# Machine Learning
+scikit-learn
