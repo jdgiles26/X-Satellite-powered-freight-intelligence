@@ -79,13 +79,12 @@ CONFIG.sh_client_id = os.getenv("COPERNICUS_CLIENT_ID")
 CONFIG.sh_client_secret = os.getenv("COPERNICUS_CLIENT_SECRET")
 CONFIG.sh_base_url = "https://sh.dataspace.copernicus.eu"
 CONFIG.sh_token_url = "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"
-CONFIG.sh_auth_base_url = "https://identity.dataspace.copernicus.eu"
 
 # SentinelHub Cache Redirection
 CONFIG.cache_dir = os.path.join(DATA_DIR, "sh_cache")
 os.makedirs(CONFIG.cache_dir, exist_ok=True)
 
-CONFIG.save()
+# Note: We do NOT call CONFIG.save() here to avoid TOML serialization errors with NoneTypes
 logger.info(f"DrishX Storage Link: {DATA_DIR}")
 logger.info("Copernicus Data Space Authentication: CONFIGURED FOR CDSE")
 
