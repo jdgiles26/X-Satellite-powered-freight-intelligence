@@ -78,12 +78,30 @@ Need evidence that does not come from a press release? DrishX gives you satellit
 ### Install and run
 
 ```bash
+# Clone the repository
 git clone https://github.com/sparkyniner/DRISH-X-Satellite-powered-freight-intelligence-.git
-cd drishx
-
+cd DRISH-X-Satellite-powered-freight-intelligence-
+ 
+# Create and activate a virtual environment
+python -m venv venv
+ 
+# On macOS / Linux:
+source venv/bin/activate
+ 
+# On Windows:
+venv\Scripts\activate
+ 
+# Install dependencies
 pip install -r requirements.txt
-
+ 
+# Start the server
 python drishx.py
+```
+ 
+The server starts on port 8000. Open your browser and go to:
+ 
+```
+http://localhost:8000
 ```
 
 Open `http://localhost:8000`. Click the **Copernicus Link** tab in the sidebar and enter your Client ID and Client Secret to connect the satellite API. That is it. No config files needed.
