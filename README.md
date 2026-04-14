@@ -133,7 +133,7 @@ These are optional if you use the Copernicus Link tab in the UI instead.
 
 ## How It Works
 
-Based on [Fisser et al. (2022)](https://doi.org/10.1016/j.rse.2022.113088), adapted for real-time web streaming.
+Based on [Fisser et al. (2022)](https://ui.adsabs.harvard.edu/abs/2022RemS...14.1595F/abstract), adapted for real-time web streaming.
 
 ### The Physics
 
