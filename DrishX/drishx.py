@@ -1082,6 +1082,37 @@ async def get_detections(mission_id: str):
     return mission["detections"]
 
 
+class AuthRequest(BaseModel):
+    client_id: str
+    client_secret: str
+
+
+@app.post("/api/auth")
+async def authenticate(req: AuthRequest):
+    """Validate and store Copernicus credentials at runtime."""
+    try:
+        # Update the running config
+        CONFIG.sh_client_id = req.client_id
+        CONFIG.sh_client_secret = req.client_secret
+        CONFIG.save()
+
+        # Test the credentials by requesting a token
+        from sentinelhub import SentinelHubSession
+        session = SentinelHubSession(config=CONFIG)
+        _ = session.token
+
+        logger.info("Copernicus credentials updated and verified via UI.")
+        return {"status": "success", "message": "Copernicus link established."}
+
+    except Exception as e:
+        logger.error(f"Auth failed: {e}")
+        # Revert to env vars if UI credentials fail
+        CONFIG.sh_client_id = os.getenv("COPERNICUS_CLIENT_ID", "")
+        CONFIG.sh_client_secret = os.getenv("COPERNICUS_CLIENT_SECRET", "")
+        CONFIG.save()
+        return {"status": "error", "message": str(e)}
+
+
 # Serve static detections
 app.mount("/detections", StaticFiles(directory=DETECTION_DIR), name="detections")
 
