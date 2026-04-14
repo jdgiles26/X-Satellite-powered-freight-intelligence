@@ -88,7 +88,7 @@ DrishX implements the Fisser et al. (2022) truck detection methodology as a read
 ### Install and run
 
 ```bash
-git clone https://github.com/yourusername/drishx.git
+git clone https://github.com/sparkyniner/DRISH-X-Satellite-powered-freight-intelligence-.git
 cd drishx
 
 pip install -r requirements.txt
