@@ -71,9 +71,9 @@ Need evidence that does not come from a press release? DrishX gives you satellit
 
 ### Prerequisites
 
-- Python 3.10+
+- Python 3.11 (other verisons might not work)
 - A free [Copernicus Data Space](https://dataspace.copernicus.eu/) account (takes 2 minutes)
-- The trained RF model file (see Getting the Model below)
+- The trained RF model file (in the drishx sub directory)
 
 ### Install and run
 
