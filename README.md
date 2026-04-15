@@ -213,7 +213,6 @@ You can also compare trends and historical data between areas
 - Provide real-time monitoring. Sentinel-2 revisits every 5 days, and imagery is available with a delay. This is a trend analysis tool, not a live feed.
 - Guarantee uniform accuracy globally. Best results on dark asphalt in clear conditions. Weaker on light-colored or unpaved roads, and in frequently cloudy regions.
 
-Be honest about these limits when using the tool. Its value comes from what it can reliably measure: volume, direction, speed, and change over time. Overstating its capabilities will undermine your credibility, especially in intelligence and research contexts where your audience will verify your claims.
 
 ## Interesting Targets
 
