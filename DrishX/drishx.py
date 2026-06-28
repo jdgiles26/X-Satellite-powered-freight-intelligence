@@ -1,6 +1,7 @@
 
 
 import os
+import asyncio
 import time
 import json
 import logging
@@ -10,7 +11,7 @@ import imageio.v3 as imageio
 import numpy as np
 import geopandas as gpd
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from shapely.geometry import LineString
 from requests.adapters import HTTPAdapter
@@ -29,6 +30,18 @@ from sentinelhub import (
     BBox, CRS, MimeType, SentinelHubCatalog,
 )
 from dotenv import load_dotenv
+
+from drishx_xai import XAIEngine
+from drishx_anomaly import AnomalyEngine
+from drishx_forecast import ForecastEngine
+from drishx_corridors import CorridorEngine
+
+from argus.ai.llm import OllamaClient
+from argus.ai.rag import RAGEngine
+from argus.ai.correlation import CorrelationEngine
+from argus.database import get_db, AsyncSessionLocal
+from argus.models import Alert, Correlation, DataFeed
+from sqlalchemy import select, and_
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Setup
@@ -623,6 +636,10 @@ class ObjectExtractor:
                 "id": crop_id,
                 "image_url": f"/detections/{crop_id}",
                 "box_shape": list(box_preds.shape),
+                "box_ymin": ymin,
+                "box_ymax": ymax,
+                "box_xmin": xmin,
+                "box_xmax": xmax,
                 "max_probs": {"blue": max_probs[0], "green": max_probs[1], "red": max_probs[2]},
             },
         }
@@ -642,6 +659,13 @@ class ARGUSEngine:
     def __init__(self):
         self.history = []
         self.rf_model = load_rf_model()
+        self.xai = XAIEngine(self.rf_model)
+        self.anomaly = AnomalyEngine()
+        self.forecast = ForecastEngine()
+        self.corridors = CorridorEngine()
+        self.ollama = OllamaClient()
+        self.rag = RAGEngine(ollama=self.ollama)
+        self.correlation = CorrelationEngine(ollama=self.ollama)
 
     def fetch_roads(self, bbox_coords, progress_cb=None):
         """Fetch major roads with automatic mirror rotation and fallbacks."""
@@ -740,9 +764,37 @@ class ARGUSEngine:
         extractor = ObjectExtractor(probs, lat_arr, lon_arr)
         detections = extractor.extract(prediction)
 
-        # 5. Add timestamp and save crops
+        # 5. Add timestamp, save crops, attach XAI feature signature
         for det in detections:
             det["timestamp"] = timestamp
+            # Compute per-detection mean feature vector for lightweight XAI
+            ymin, ymax = det.get("box_ymin", 0), det.get("box_ymax", H)
+            xmin, xmax = det.get("box_xmin", 0), det.get("box_xmax", W)
+            # Fallback: estimate from lat/lon if box coords not present
+            if "box_ymin" not in det:
+                cy = int(np.clip((max_lat - det["lat"]) / (max_lat - min_lat + 1e-9) * H, 0, H - 1))
+                cx = int(np.clip((det["lon"] - min_lon) / (max_lon - min_lon + 1e-9) * W, 0, W - 1))
+                y0 = max(0, cy - 2)
+                y1 = min(H, cy + 3)
+                x0 = max(0, cx - 2)
+                x1 = min(W, cx + 3)
+                by, bx = np.where(prediction[y0:y1, x0:x1] == 2) if (y1 - y0) > 0 and (x1 - x0) > 0 else (np.array([0]), np.array([0]))
+                ymin = max(0, y0 + int(np.min(by)) if len(by) > 0 else y0)
+                ymax = min(H, y0 + int(np.max(by)) + 1 if len(by) > 0 else y1)
+                xmin = max(0, x0 + int(np.min(bx)) if len(bx) > 0 else x0)
+                xmax = min(W, x0 + int(np.max(bx)) + 1 if len(bx) > 0 else x1)
+            
+            det["box_ymin"] = int(ymin)
+            det["box_ymax"] = int(ymax)
+            det["box_xmin"] = int(xmin)
+            det["box_xmax"] = int(xmax)
+            
+            roi = feature_stack[:, ymin:ymax, xmin:xmax]
+            if roi.size > 0:
+                det["_feature_signature"] = np.nanmean(roi.reshape(roi.shape[0], -1), axis=1).tolist()
+            else:
+                det["_feature_signature"] = [0.0] * 7
+            
             try:
                 self._save_crop(data, det, H, W, min_lat, min_lon, max_lat, max_lon)
             except Exception as e:
@@ -1078,12 +1130,100 @@ async def get_detections(mission_id: str):
     mission = next((h for h in engine.history if h["mission_id"] == mission_id), None)
     if not mission:
         raise HTTPException(status_code=404, detail="Mission not found")
-    return mission["detections"]
+    # Inject mission_id into each detection for frontend reference
+    dets = []
+    for d in mission["detections"]:
+        det = dict(d)
+        det["_mission_id"] = mission_id
+        dets.append(det)
+    return dets
+
+
+@app.get("/api/detections/{mission_id}/{detection_id}/explain")
+async def explain_detection(mission_id: str, detection_id: str):
+    """Generate XAI explanation for a specific detection."""
+    mission = next((h for h in engine.history if h["mission_id"] == mission_id), None)
+    if not mission:
+        raise HTTPException(status_code=404, detail="Mission not found")
+
+    detection = next((d for d in mission["detections"] if d.get("id") == detection_id), None)
+    if not detection:
+        raise HTTPException(status_code=404, detail="Detection not found")
+
+    feature_sig = detection.get("_feature_signature")
+    explanation = engine.xai.explain_detection(feature_signature=feature_sig)
+    explanation["detection_id"] = detection_id
+    explanation["mission_id"] = mission_id
+    return explanation
+
+
+@app.get("/api/analytics/anomalies")
+async def get_anomalies(mission_id: str = None):
+    """Get anomaly records. Optionally filter by mission."""
+    if mission_id:
+        mission = next((h for h in engine.history if h["mission_id"] == mission_id), None)
+        if not mission:
+            raise HTTPException(status_code=404, detail="Mission not found")
+        return engine.anomaly.analyze_mission(mission)
+    return engine.anomaly.analyze_all(engine.history)
+
+
+@app.get("/api/analytics/anomalies/summary")
+async def get_anomaly_summary():
+    """Get dashboard-level anomaly summary."""
+    return engine.anomaly.get_summary(engine.history)
+
+
+@app.get("/api/analytics/forecast")
+async def get_forecast(mission_id: str = None, horizon_days: int = 14):
+    """Get freight volume forecast for a mission or all missions."""
+    if mission_id:
+        mission = next((h for h in engine.history if h["mission_id"] == mission_id), None)
+        if not mission:
+            raise HTTPException(status_code=404, detail="Mission not found")
+        return engine.forecast.forecast_mission(mission, horizon_days)
+    return engine.forecast.forecast_all(engine.history, horizon_days)
+
+
+@app.get("/api/corridors")
+async def get_corridors():
+    """Discover and return freight corridors from all detection history."""
+    corridors = engine.corridors.discover_corridors(engine.history)
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": c["geometry"],
+                "properties": {k: v for k, v in c.items() if k != "geometry"},
+            }
+            for c in corridors
+        ],
+    }
+
+
+@app.get("/api/corridors/{corridor_id}/timeline")
+async def get_corridor_timeline(corridor_id: str):
+    """Get temporal profile for a specific corridor."""
+    return engine.corridors.get_corridor_timeline(corridor_id, engine.history)
 
 
 class AuthRequest(BaseModel):
     client_id: str
     client_secret: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    history: List[Dict[str, str]] = []
+
+
+class QueryRequest(BaseModel):
+    question: str
+
+
+class DismissAlertRequest(BaseModel):
+    pass
 
 
 @app.post("/api/auth")
@@ -1093,7 +1233,10 @@ async def authenticate(req: AuthRequest):
         # Update the running config
         CONFIG.sh_client_id = req.client_id
         CONFIG.sh_client_secret = req.client_secret
-        CONFIG.save()
+        try:
+            CONFIG.save()
+        except Exception as save_err:
+            logger.warning(f"CONFIG.save() skipped: {save_err}")
 
         # Test the credentials by requesting a token
         from sentinelhub import SentinelHubSession
@@ -1108,8 +1251,167 @@ async def authenticate(req: AuthRequest):
         # Revert to env vars if UI credentials fail
         CONFIG.sh_client_id = os.getenv("COPERNICUS_CLIENT_ID", "")
         CONFIG.sh_client_secret = os.getenv("COPERNICUS_CLIENT_SECRET", "")
-        CONFIG.save()
+        try:
+            CONFIG.save()
+        except Exception as save_err:
+            logger.warning(f"CONFIG.save() skipped during revert: {save_err}")
         return {"status": "error", "message": str(e)}
+
+
+@app.delete("/api/missions/{mission_id}")
+async def delete_mission(mission_id: str):
+    """Delete a mission and its associated detection crops from history."""
+    mission = next((h for h in engine.history if h["mission_id"] == mission_id), None)
+    if not mission:
+        raise HTTPException(status_code=404, detail="Mission not found")
+
+    # Delete detection image crops
+    for det in mission.get("detections", []):
+        img_path = os.path.join(DETECTION_DIR, det.get("id", ""))
+        try:
+            if os.path.isfile(img_path):
+                os.remove(img_path)
+        except Exception as e:
+            logger.warning(f"Could not delete crop {img_path}: {e}")
+
+    engine.history.remove(mission)
+    logger.info(f"Deleted mission {mission_id}")
+    return {"status": "deleted", "mission_id": mission_id}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Optional background ingestion supervisor
+# ─────────────────────────────────────────────────────────────────────────────
+_ingestion_supervisor_task = None
+
+
+@app.on_event("startup")
+async def startup_event():
+    # Initialize database tables
+    try:
+        from argus.database import init_db
+        await init_db()
+        logger.info("ARGUS database initialized")
+    except Exception as e:
+        logger.warning(f"ARGUS database init skipped: {e}")
+
+    global _ingestion_supervisor_task
+    if os.getenv("ENABLE_INGESTION", "0").lower() in ("1", "true", "yes"):
+        from argus.ingestion.supervisor import IngestionSupervisor
+        supervisor = IngestionSupervisor()
+        _ingestion_supervisor_task = asyncio.create_task(supervisor.start())
+        logger.info("ARGUS ingestion supervisor started in background")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    global _ingestion_supervisor_task
+    if _ingestion_supervisor_task is not None:
+        _ingestion_supervisor_task.cancel()
+        try:
+            await _ingestion_supervisor_task
+        except asyncio.CancelledError:
+            pass
+        logger.info("ARGUS ingestion supervisor stopped")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI / RAG / Alert / Correlation Endpoints
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.post("/api/ai/chat")
+async def ai_chat(req: ChatRequest):
+    """RAG-aware chat endpoint with optional conversation history."""
+    try:
+        result = await engine.rag.chat(message=req.message, history=req.history)
+        return result
+    except Exception as exc:
+        logger.error(f"AI chat error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/api/ai/query")
+async def ai_query(req: QueryRequest):
+    """Structured RAG query endpoint."""
+    try:
+        result = await engine.rag.query(question=req.question)
+        return result
+    except Exception as exc:
+        logger.error(f"AI query error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/api/alerts")
+async def get_alerts(active_only: bool = True, limit: int = 100):
+    """Return active (or all) alerts from the database."""
+    try:
+        async with AsyncSessionLocal() as session:
+            stmt = select(Alert)
+            if active_only:
+                stmt = stmt.where(Alert.dismissed == 0)
+            stmt = stmt.order_by(Alert.created_at.desc()).limit(limit)
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [
+                {
+                    "id": str(r.id),
+                    "alert_id": r.alert_id,
+                    "severity": r.severity,
+                    "confidence": r.confidence,
+                    "title": r.title,
+                    "description": r.description,
+                    "assumptions": r.assumptions,
+                    "predictions": r.predictions,
+                    "correlated_event_ids": r.correlated_event_ids,
+                    "recommended_action": r.recommended_action,
+                    "lat": r.lat,
+                    "lon": r.lon,
+                    "dismissed": r.dismissed,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in rows
+            ]
+    except Exception as exc:
+        logger.error(f"Get alerts error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/api/alerts/{alert_id}/dismiss")
+async def dismiss_alert(alert_id: str):
+    """Dismiss an active alert by its alert_id."""
+    try:
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(select(Alert).where(Alert.alert_id == alert_id))
+            alert = result.scalar_one_or_none()
+            if not alert:
+                raise HTTPException(status_code=404, detail="Alert not found")
+            alert.dismissed = 1
+            await session.commit()
+            return {"status": "dismissed", "alert_id": alert_id}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(f"Dismiss alert error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/api/correlations/run")
+async def run_correlations(
+    lookback_hours: float = 24.0,
+    radius_km: float = 50.0,
+    window_hours: float = 6.0,
+):
+    """Trigger manual correlation analysis on recent DataFeed events."""
+    try:
+        result = await engine.correlation.run_analysis(
+            lookback_hours=lookback_hours,
+            radius_km=radius_km,
+            window_hours=window_hours,
+        )
+        return result
+    except Exception as exc:
+        logger.error(f"Correlation run error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 # Serve static detections
@@ -1129,4 +1431,4 @@ if __name__ == "__main__":
         logger.error(f"Copernicus Data Space Authentication: FAILED - {e}")
         logger.warning("System will start, but satellite monitoring may be degraded.")
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
