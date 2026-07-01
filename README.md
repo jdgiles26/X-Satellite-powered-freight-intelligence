@@ -299,13 +299,6 @@ Trained on German autobahns. In practice:
 - Sub-Saharan Africa: good on paved trunk roads, weak on unpaved
 
 
-
-## References
-
-Fisser, H., Rahimi, E., Tetteh, M., Hoeser, T., Mayer-Gurr, T., and Kunzer, C. [Detecting Moving Trucks on Roads Using Sentinel-2 Data](https://ui.adsabs.harvard.edu/abs/2022RemS...14.1595F/abstract). Remote Sensing of Environment, 2022.
-
-Reference implementation: [S2TruckDetect](https://ui.adsabs.harvard.edu/abs/2022RemS...14.1595F/abstract) by Henrik Fisser.
-
 Satellite data: [Copernicus Data Space Ecosystem](https://dataspace.copernicus.eu/) (free, ESA).
 Roads: [OpenStreetMap](https://www.openstreetmap.org/) via Overpass API.
 
@@ -321,8 +314,5 @@ MIT.
 
 
 
-*dabbleX-freight., from the Sanskrit drishti: sight, vision, perspective.*
+*dabbleX-freight., American: sight, vision, perspective.*
 
-[Sairaj Balaji](https://www.linkedin.com/in/sairaj-balaji-7295b2246/)
-
-</div>
