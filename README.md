@@ -80,8 +80,8 @@ Need evidence that does not come from a press release? dabbleX-freight. gives yo
 
 ```bash
 # Clone the repository
-git clone https://github.com/sparkyniner/DRISH-X-Satellite-powered-freight-intelligence-.git
-cd DRISH-X-Satellite-powered-freight-intelligence-
+git clone https://github.com/jdgiles26/X-Satellite-powered-freight-intelligence-.git
+cd X-Satellite-powered-freight-intelligence
  
 # Create and activate a virtual environment
 python3.11 -m venv venv
