@@ -1,6 +1,6 @@
 <div align="center">
 
-# DrishX
+# dabbleX-freight.
 
 **See what's moving. Anywhere. For free.**
 
@@ -21,9 +21,9 @@ Automated vehicle traffic intelligence from Sentinel-2 satellite imagery.
 
 ## What is this?
 
-DrishX answers a simple question for any road on Earth: **how much traffic is on it, and how has that changed over time?**
+dabbleX-freight. answers a simple question for any road on Earth: **how much traffic is on it, and how has that changed over time?**
 
-It works by exploiting a quirk in how the Sentinel-2 satellite captures imagery. The sensor records red, green, and blue light 1.01 seconds apart. Anything stationary looks normal. But a vehicle moving at highway speed shifts position between those captures, leaving a distinctive blue-green-red spectral smear across a few pixels. DrishX finds those smears, counts them, estimates their speed and direction, and tracks how volume changes across weeks and months.
+It works by exploiting a quirk in how the Sentinel-2 satellite captures imagery. The sensor records red, green, and blue light 1.01 seconds apart. Anything stationary looks normal. But a vehicle moving at highway speed shifts position between those captures, leaving a distinctive blue-green-red spectral smear across a few pixels. dabbleX-freight. finds those smears, counts them, estimates their speed and direction, and tracks how volume changes across weeks and months.
 
 The output is a traffic activity time-series for any major road corridor on the planet. Built on completely free Copernicus data, runs locally in a browser, and requires zero ground infrastructure.
 
@@ -31,15 +31,15 @@ The output is a traffic activity time-series for any major road corridor on the 
 
 Traffic on roads is one of the most reliable observable indicators of what is actually happening in a place. More useful than official statements. Harder to fake than statistics. And until now, getting systematic road traffic data for an arbitrary location required either expensive commercial providers or physical access to install sensors.
 
-DrishX changes that. Point it at any road, anywhere, and get months of traffic trend data in minutes.
+dabbleX-freight. changes that. Point it at any road, anywhere, and get months of traffic trend data in minutes.
 
-The applications are as broad as the question "what's moving on this road" is broad. Anywhere that vehicle activity tells you something meaningful, DrishX can give you a data-driven answer from orbit.
+The applications are as broad as the question "what's moving on this road" is broad. Anywhere that vehicle activity tells you something meaningful, dabbleX-freight. can give you a data-driven answer from orbit.
 
 ## Use Cases
 
 ### Economic Intelligence
 
-Truck traffic is one of the most honest economic signals that exists. When a port's throughput drops, you see it in the vehicles leaving the gate before any press release. When trade routes shift, road traffic moves before the official statistics do. DrishX gives you a proxy for economic activity that updates every 5 days and covers any corridor on Earth, from the Shahid Rajaee port highway in Bandar Abbas to the Mombasa-Nairobi A109 in Kenya.
+Truck traffic is one of the most honest economic signals that exists. When a port's throughput drops, you see it in the vehicles leaving the gate before any press release. When trade routes shift, road traffic moves before the official statistics do. dabbleX-freight. gives you a proxy for economic activity that updates every 5 days and covers any corridor on Earth, from the Shahid Rajaee port highway in Bandar Abbas to the Mombasa-Nairobi A109 in Kenya.
 
 ### Supply Chain and Logistics
 
@@ -51,21 +51,21 @@ When sanctions take effect or tariffs change, the impact shows up on road corrid
 
 ### Security and Defense Intelligence
 
-Vehicle movement on roads near sensitive facilities, military installations, border crossings, and restricted zones is a meaningful observable. DrishX can detect changes in traffic volume and patterns on access roads, supply routes, and perimeter corridors over time. This includes roads serving military bases, nuclear facilities, missile test sites, naval ports, and border staging areas.
+Vehicle movement on roads near sensitive facilities, military installations, border crossings, and restricted zones is a meaningful observable. dabbleX-freight. can detect changes in traffic volume and patterns on access roads, supply routes, and perimeter corridors over time. This includes roads serving military bases, nuclear facilities, missile test sites, naval ports, and border staging areas.
 
-To be clear about what this means in practice: DrishX can tell you that vehicle activity on a specific road increased by 40% over the past two weeks, or that a normally busy corridor has gone quiet. It cannot identify what the vehicles are. At 10m resolution, a military truck looks identical to a civilian truck. You cannot distinguish a tank transporter from a logging truck. You cannot read markings, count axles, or determine cargo. What you get is volume, speed, heading, and trend. That is a useful signal when combined with other sources and context, but it is not a surveillance system and should not be presented as one.
+To be clear about what this means in practice: dabbleX-freight. can tell you that vehicle activity on a specific road increased by 40% over the past two weeks, or that a normally busy corridor has gone quiet. It cannot identify what the vehicles are. At 10m resolution, a military truck looks identical to a civilian truck. You cannot distinguish a tank transporter from a logging truck. You cannot read markings, count axles, or determine cargo. What you get is volume, speed, heading, and trend. That is a useful signal when combined with other sources and context, but it is not a surveillance system and should not be presented as one.
 
 The same limitations apply to nuclear or WMD monitoring. You can observe whether traffic patterns on access roads to known facilities have changed. You cannot determine what is being transported. The intelligence value is in the pattern and the change, not in the individual detection.
 
 
 ### Disaster and Crisis Response
 
-After floods, earthquakes, or conflict, which roads are actually operational? DrishX can compare current vehicle activity against a historical baseline to identify corridors that have gone quiet (blocked, damaged) or corridors carrying unusual volume (diversion routes, evacuation flows). Especially useful in areas with poor real-time reporting infrastructure.
+After floods, earthquakes, or conflict, which roads are actually operational? dabbleX-freight. can compare current vehicle activity against a historical baseline to identify corridors that have gone quiet (blocked, damaged) or corridors carrying unusual volume (diversion routes, evacuation flows). Especially useful in areas with poor real-time reporting infrastructure.
 
 
 ### Journalism and Investigations
 
-Need evidence that does not come from a press release? DrishX gives you satellite-derived, timestamped, independently verifiable data. When officials claim a trade corridor is thriving, you can check. When a new road is supposedly complete, you can see if anyone is actually using it. The data comes from a European Space Agency satellite, not from any government or corporation with a stake in the answer.
+Need evidence that does not come from a press release? dabbleX-freight. gives you satellite-derived, timestamped, independently verifiable data. When officials claim a trade corridor is thriving, you can check. When a new road is supposedly complete, you can see if anyone is actually using it. The data comes from a European Space Agency satellite, not from any government or corporation with a stake in the answer.
 
 ## Quick Start
 
@@ -73,7 +73,7 @@ Need evidence that does not come from a press release? DrishX gives you satellit
 
 - Python 3.11 (other verisons might not work)
 - A free [Copernicus Data Space](https://dataspace.copernicus.eu/) account (takes 2 minutes)
-- The trained RF model file (in the drishx sub directory)
+- The trained RF model file (in the dabbleX-freight. sub directory)
 - Be patient it takes time soemtimes pinging mirrors for the road data
 
 ### Install and run
@@ -92,13 +92,13 @@ source venv/bin/activate
 # On Windows:
 venv\Scripts\activate
 
-cd DrishX
+cd dabbleX-freight.
  
 # Install dependencies
 pip install -r requirements.txt
  
 # Start the server
-python drishx.py
+python dabbleX-freight..py
 ```
  
 The server starts on port 8000. Open your browser and go to:
@@ -113,7 +113,7 @@ If you prefer environment variables instead of the UI, you can copy `.env.exampl
 
 ## Using the Interface
 
-DrishX is designed to be used directly from the browser with minimal setup.
+dabbleX-freight. is designed to be used directly from the browser with minimal setup.
 
 ### Selecting an Area of Interest (AOI)
 
@@ -144,10 +144,10 @@ Dense mode increases the number of images processed, improving detection reliabi
 
 ### Data Storage
 
-By default, all cached data and detection outputs go to `drishx_data/` in the project directory. To redirect (for example, to an external drive with more space):
+By default, all cached data and detection outputs go to `dabbleX-freight._data/` in the project directory. To redirect (for example, to an external drive with more space):
 
 ```bash
-export DRISHX_DATA_DIR=/path/to/your/storage
+export dabbleX-freight._DATA_DIR=/path/to/your/storage
 ```
 
 ### Environment Variables
@@ -160,7 +160,7 @@ These are optional if you use the Copernicus Link tab in the UI instead.
 | `COPERNICUS_CLIENT_ID` | Yes (or use UI) | Copernicus Data Space OAuth client ID |
 | `COPERNICUS_CLIENT_SECRET` | Yes (or use UI) | Copernicus Data Space OAuth client secret |
 | `RF_MODEL_PATH` | No | Path to trained RF model (defaults to `./rf_model.pickle`) |
-| `DRISHX_DATA_DIR` | No | Root directory for all data (defaults to `./drishx_data`) |
+| `dabbleX-freight._DATA_DIR` | No | Root directory for all data (defaults to `./dabbleX-freight._data`) |
 
 ## How It Works
 
@@ -168,7 +168,7 @@ Based on [Fisser et al. (2022)](https://ui.adsabs.harvard.edu/abs/2022RemS...14.
 
 ### The Physics
 
-Sentinel-2's sensor captures spectral bands at slightly different times, about 1.01 seconds between blue (B02) and red (B04). A vehicle at 80 km/h moves roughly 22 meters in that interval. At 10m pixel resolution, it shows up at different positions in each band, creating a blue to green to red smear that DrishX is trained to find.
+Sentinel-2's sensor captures spectral bands at slightly different times, about 1.01 seconds between blue (B02) and red (B04). A vehicle at 80 km/h moves roughly 22 meters in that interval. At 10m pixel resolution, it shows up at different positions in each band, creating a blue to green to red smear that dabbleX-freight. is trained to find.
 
 ### The Pipeline
 
@@ -252,8 +252,8 @@ Use "Draw AOI" on the map view. Not built-in, but they produce strong results.
 ## Project Structure
 
 ```
-drishx/
-+-- drishx.py              # Backend: API + detection engine
+dabbleX-freight./
++-- dabbleX-freight..py              # Backend: API + detection engine
 +-- rf_model.pickle        # Trained RF model (not in repo)
 +-- .env                   # Credentials (not in repo, optional if using UI)
 +-- requirements.txt       # Dependencies
@@ -261,7 +261,7 @@ drishx/
 |   +-- index.html         # Dashboard
 |   +-- app.js             # Frontend logic
 |   +-- styles.css         # Styling
-+-- drishx_data/           # Auto-created
++-- dabbleX-freight._data/           # Auto-created
     +-- sentinel_data/
     |   +-- detections/    # Vehicle crop images
     +-- osm_cache/         # OpenStreetMap cache
@@ -287,7 +287,7 @@ drishx/
 
 ### Cloud Cover
 
-DrishX uses the Sentinel-2 cloud mask to exclude cloudy pixels. Overcast frames show zero detections. That is correct behavior. Focus on the moving average trend rather than individual days.
+dabbleX-freight. uses the Sentinel-2 cloud mask to exclude cloudy pixels. Overcast frames show zero detections. That is correct behavior. Focus on the moving average trend rather than individual days.
 
 ### Regional Accuracy
 
@@ -321,7 +321,7 @@ MIT.
 
 
 
-*DrishX, from the Sanskrit drishti: sight, vision, perspective.*
+*dabbleX-freight., from the Sanskrit drishti: sight, vision, perspective.*
 
 [Sairaj Balaji](https://www.linkedin.com/in/sairaj-balaji-7295b2246/)
 
