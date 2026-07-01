@@ -1,8 +1,8 @@
-# ARGUS v2.0 — Multi-Domain Intelligence Platform
+# dabbleX-freight v2.0 — Multi-Domain Intelligence Platform
 ## Comprehensive Implementation Plan
 
 ### Executive Summary
-ARGUS evolves from a Sentinel-2 truck detector into a real-time, multi-domain situational awareness platform. It ingests open-source data feeds (traffic, weather, aviation, maritime, public safety, social signals, radio), visualizes them on a 3D globe, and employs both browser-side WebGPU AI (Transformers.js) and server-side LLM reasoning to autonomously correlate events, generate alerts, and provide natural-language intelligence briefings.
+dabbleX-freight evolves from a Sentinel-2 truck detector into a real-time, multi-domain situational awareness platform. It ingests open-source data feeds (traffic, weather, aviation, maritime, public safety, social signals, radio), visualizes them on a 3D globe, and employs both browser-side WebGPU AI (Transformers.js) and server-side LLM reasoning to autonomously correlate events, generate alerts, and provide natural-language intelligence briefings.
 
 ---
 
