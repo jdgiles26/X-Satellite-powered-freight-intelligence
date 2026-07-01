@@ -26,7 +26,7 @@ numpy<2.0.0
 rasterio
 
 # Machine Learning (Modernized for Python 3.12+ build compatibility)
-scikit-learn==1.3.2
+scikit-learn==1.5.0
 shap>=0.45.0
 prophet>=1.1.5
 pandas>=1.5.0
