@@ -1,7 +1,7 @@
 {
   "builds": [
     {
-      "src": "dabbleX-freight..py",
+      "src": "drishx.py",
       "use": "@vercel/python"
     },
     {
@@ -12,7 +12,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "dabbleX-freight..py"
+      "dest": "drishx.py"
     },
     {
       "src": "/(.*)",
