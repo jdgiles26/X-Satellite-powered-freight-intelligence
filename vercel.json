@@ -1,22 +1,22 @@
 {
   "builds": [
     {
-      "src": "drishx.py",
+      "src": "DrishX/drishx.py",
       "use": "@vercel/python"
     },
     {
-      "src": "frontend/**",
+      "src": "DrishX/frontend/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "drishx.py"
+      "dest": "DrishX/drishx.py"
     },
     {
       "src": "/(.*)",
-      "dest": "frontend/$1"
+      "dest": "DrishX/frontend/$1"
     }
   ]
 }
