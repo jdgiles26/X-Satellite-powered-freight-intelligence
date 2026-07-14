@@ -54,10 +54,21 @@ logger = logging.getLogger("ARGUS")
 
 SECONDS_OFFSET_B02_B04 = 1.01  # Sentinel-2 temporal sensing offset between B02 and B04
 
-# Dynamic Storage Root (Expansion Drive or Local Fallback)
-DATA_DIR = os.getenv("DRISHX_DATA_DIR", os.path.join(os.getcwd(), "drishx_data"))
+# --- VERCEL PATHING FIXES ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# 1. Absolute pathing for the model
+default_model = os.path.join(BASE_DIR, "rf_model.pickle")
+RF_MODEL_PATH = os.getenv("RF_MODEL_PATH", default_model)
+
+# 2. Dynamic Storage Root (Force /tmp on Vercel, local otherwise)
+is_vercel = os.environ.get("VERCEL") == "1"
+default_data_dir = "/tmp/drishx_data" if is_vercel else os.path.join(BASE_DIR, "drishx_data")
+
+DATA_DIR = os.getenv("DRISHX_DATA_DIR", default_data_dir)
 DETECTION_DIR = os.path.join(DATA_DIR, "sentinel_data/detections")
 os.makedirs(DETECTION_DIR, exist_ok=True)
+# ----------------------------
 
 OVERPASS_MIRRORS = [
     "https://lz4.overpass-api.de/api/interpreter",
