@@ -18,22 +18,14 @@ redis
 
 # Geospatial & Orbital Logic
 sentinelhub
-osmnx
 geopandas
 shapely
 imageio
 numpy<2.0.0
 rasterio
 
-# Machine Learning (Modernized for Python 3.12+ build compatibility)
 scikit-learn==1.5.0
-shap>=0.45.0
-prophet>=1.1.5
 pandas>=1.5.0
-
-# Vector DB & Embeddings
-chromadb-client
-sentence-transformers
 
 # Utility
 python-dateutil

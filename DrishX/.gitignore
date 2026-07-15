@@ -57,7 +57,7 @@ drishx_data/sentinel_data/detections/
 *.h5
 *.pkl
 *.pickle
-!rf_model.pickle
+!rf_model.pickle.gz
 
 # ── Node / Frontend Build ──
 node_modules/

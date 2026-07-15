@@ -34,6 +34,7 @@ class DrishXDashboard {
 
         // Initial data fetch
         await this.fetchSites();
+        this.fetchAnomalies();
 
         // Boot Auth (BYOK check)
         this.checkStoredCredentials();
@@ -150,6 +151,12 @@ class DrishXDashboard {
         document.getElementById('refresh-anomalies')?.addEventListener('click', () => {
             this.fetchAnomalies();
             this.notify("Anomaly scan dispatched.", "info");
+        });
+
+        // Signal feed refresh
+        document.getElementById('refresh-feed')?.addEventListener('click', () => {
+            this.fetchAnomalies();
+            this.notify("Signal feed refreshed.", "info");
         });
 
         // Forecast toggle
@@ -723,6 +730,7 @@ class DrishXDashboard {
             const summary = await summaryResp.json();
 
             this.renderAnomalyFeed(anomalies);
+            this.renderCompactSignalFeed(anomalies);
             this.renderAnomalySummary(summary);
             this.renderAnomalyMarkers(anomalies);
 
@@ -770,6 +778,29 @@ class DrishXDashboard {
                 <div class="anomaly-body">${a.description}</div>
                 <div class="anomaly-meta">
                     <span>${a.mission_label}</span>
+                    <span>${a.date}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderCompactSignalFeed(anomalies) {
+        const container = document.getElementById('alert-feed-compact');
+        if (!container) return;
+
+        if (!anomalies || anomalies.length === 0) {
+            container.innerHTML = '<div class="loading-state">No active signals. Freight patterns nominal.</div>';
+            return;
+        }
+
+        container.innerHTML = anomalies.slice(0, 15).map(a => `
+            <div class="anomaly-card severity-${a.severity?.toLowerCase() || 'low'}">
+                <div class="anomaly-header">
+                    <span class="anomaly-type" style="font-size: 0.75rem;">${a.type.replace(/_/g, ' ').toUpperCase()}</span>
+                    <span class="anomaly-severity" style="font-size: 0.7rem; color: ${a.severity_color || '#10b981'}">${a.severity}</span>
+                </div>
+                <div class="anomaly-body" style="font-size: 0.75rem; margin-top: 0.25rem;">${a.description}</div>
+                <div class="anomaly-meta" style="font-size: 0.65rem; margin-top: 0.25rem;">
                     <span>${a.date}</span>
                 </div>
             </div>

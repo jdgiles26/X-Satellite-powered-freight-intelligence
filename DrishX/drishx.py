@@ -1,6 +1,9 @@
 
 
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import asyncio
 import time
 import json
@@ -24,7 +27,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
-import osmnx as ox
+try:
+    import osmnx as ox
+except ImportError:
+    ox = None
 from sentinelhub import (
     SHConfig, SentinelHubRequest, DataCollection,
     BBox, CRS, MimeType, SentinelHubCatalog,
@@ -79,6 +85,9 @@ OVERPASS_MIRRORS = [
 
 # Network session with retries
 _session = requests.Session()
+_session.headers.update({
+    "User-Agent": "DrishXCorridorIntelligence/1.0 (contact@govaicompliance.com)"
+})
 _retry = Retry(
     total=2, backoff_factor=1.0,
     status_forcelist=[429, 500, 502, 503, 504],
@@ -88,14 +97,15 @@ _adapter = HTTPAdapter(max_retries=_retry)
 _session.mount("http://", _adapter)
 _session.mount("https://", _adapter)
 
-ox.settings.requests_session = _session
-ox.settings.requests_timeout = 30
-ox.settings.overpass_rate_limit = False
-ox.settings.max_query_area_size = 1_000_000_000_000
-ox.settings.log_console = False
-# OSMnx Cache Redirection
-ox.settings.use_cache = True
-ox.settings.cache_folder = os.path.join(DATA_DIR, "osm_cache")
+if ox is not None:
+    ox.settings.requests_session = _session
+    ox.settings.requests_timeout = 30
+    ox.settings.overpass_rate_limit = False
+    ox.settings.max_query_area_size = 1_000_000_000_000
+    ox.settings.log_console = False
+    # OSMnx Cache Redirection
+    ox.settings.use_cache = True
+    ox.settings.cache_folder = os.path.join(DATA_DIR, "osm_cache")
 
 # Copernicus Data Space config
 CONFIG = SHConfig()
@@ -236,26 +246,36 @@ def build_feature_stack(data):
 # RF Model loading
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Path to the trained Random Forest model from S2TruckDetect
-RF_MODEL_PATH = os.getenv("RF_MODEL_PATH", "rf_model.pickle")
+# Path to the trained Random Forest model from S2TruckDetect (initialized at top)
 _rf_model = None
 
 
 def load_rf_model(path=None):
-    """Load the trained RF model from pickle. Returns None if not found."""
+    """Load the trained RF model from pickle or gzipped pickle. Returns None if not found."""
     global _rf_model
     p = path or RF_MODEL_PATH
     if _rf_model is not None:
         return _rf_model
-    if os.path.isfile(p):
+    
+    actual_path = p
+    if not os.path.isfile(actual_path) and os.path.isfile(p + ".gz"):
+        actual_path = p + ".gz"
+        
+    if os.path.isfile(actual_path):
         try:
-            _rf_model = pickle.load(open(p, "rb"))
-            logger.info(f"Loaded trained RF model from {p}")
+            if actual_path.endswith(".gz"):
+                import gzip
+                with gzip.open(actual_path, "rb") as f:
+                    _rf_model = pickle.load(f)
+            else:
+                with open(actual_path, "rb") as f:
+                    _rf_model = pickle.load(f)
+            logger.info(f"Loaded trained RF model from {actual_path}")
             return _rf_model
         except Exception as e:
-            logger.error(f"Failed to load RF model from {p}: {e}")
+            logger.error(f"Failed to load RF model from {actual_path}: {e}")
     else:
-        logger.warning(f"RF model not found at {p} — will use proxy classifier (lower accuracy)")
+        logger.warning(f"RF model not found at {p} or {p}.gz — will use proxy classifier (lower accuracy)")
     return None
 
 
@@ -698,52 +718,62 @@ class ARGUSEngine:
 
         log(f"Starting road discovery (ROI: {center_lat:.4f}, {center_lon:.4f})", pct=5)
 
-        for i, mirror in enumerate(OVERPASS_MIRRORS):
-            log(f"Trying mirror {i+1}/{len(OVERPASS_MIRRORS)}: {mirror}", pct=10 + i * 5)
-            ox.settings.overpass_url = mirror
-            try:
-                graph = ox.graph_from_point(
-                    (center_lat, center_lon), dist=dist_m,
-                    network_type="drive", simplify=True,
-                    retain_all=False, truncate_by_edge=True,
-                )
-                roads = ox.graph_to_gdfs(graph, nodes=False)
-                major_types = [
-                    "motorway", "trunk", "primary", "secondary",
-                    "motorway_link", "trunk_link", "primary_link",
-                ]
-                roads = roads[roads["highway"].isin(major_types)].copy()
-                if not roads.empty:
-                    logger.info(f"Fetched {len(roads)} major roads from {mirror}")
-                    return roads
-            except Exception as e:
-                logger.warning(f"Mirror {mirror} failed: {e}")
-                time.sleep(1)
+        if ox is not None:
+            for i, mirror in enumerate(OVERPASS_MIRRORS):
+                log(f"Trying mirror {i+1}/{len(OVERPASS_MIRRORS)}: {mirror}", pct=10 + i * 5)
+                ox.settings.overpass_url = mirror
+                try:
+                    graph = ox.graph_from_point(
+                        (center_lat, center_lon), dist=dist_m,
+                        network_type="drive", simplify=True,
+                        retain_all=False, truncate_by_edge=True,
+                    )
+                    roads = ox.graph_to_gdfs(graph, nodes=False)
+                    major_types = [
+                        "motorway", "trunk", "primary", "secondary",
+                        "motorway_link", "trunk_link", "primary_link",
+                    ]
+                    roads = roads[roads["highway"].isin(major_types)].copy()
+                    if not roads.empty:
+                        logger.info(f"Fetched {len(roads)} major roads from {mirror}")
+                        return roads
+                except Exception as e:
+                    logger.warning(f"Mirror {mirror} failed: {e}")
+                    time.sleep(1)
+        else:
+            log("OSMnx not available — skipping OSMnx mirror query and going directly to raw Overpass query.", pct=20)
 
         # Raw Overpass fallback
-        logger.warning("All mirrors failed. Trying raw Overpass query.")
-        try:
-            query = f"""
-            [out:json][timeout:60];
-            (way["highway"~"motorway|trunk|primary"]({min_lat},{min_lon},{max_lat},{max_lon}););
-            out body; >; out skel qt;
-            """
-            resp = requests.post(OVERPASS_MIRRORS[0], data={"data": query}, timeout=60)
-            if resp.status_code == 200:
-                data = resp.json()
-                nodes = {n["id"]: (n["lon"], n["lat"]) for n in data["elements"] if n["type"] == "node"}
-                ways = []
-                for w in data["elements"]:
-                    if w["type"] == "way" and "nodes" in w:
-                        coords = [nodes[nid] for nid in w["nodes"] if nid in nodes]
-                        if len(coords) > 1:
-                            ways.append({"geometry": LineString(coords), "highway": w["tags"].get("highway")})
-                if ways:
-                    roads = gpd.GeoDataFrame(ways, crs="EPSG:4326")
-                    logger.info(f"Raw fallback: {len(roads)} roads")
-                    return roads
-        except Exception as e:
-            logger.error(f"Raw fallback failed: {e}")
+        logger.warning("All mirrors failed or OSMnx unavailable. Trying raw Overpass query.")
+        headers = {
+            "User-Agent": "DrishXCorridorIntelligence/1.0 (contact@govaicompliance.com)"
+        }
+        for i, mirror in enumerate(OVERPASS_MIRRORS):
+            logger.info(f"Trying raw Overpass mirror {i+1}/{len(OVERPASS_MIRRORS)}: {mirror}")
+            try:
+                query = f"""
+                [out:json][timeout:60];
+                (way["highway"~"motorway|trunk|primary"]({min_lat},{min_lon},{max_lat},{max_lon}););
+                out body; >; out skel qt;
+                """
+                resp = requests.post(mirror, data={"data": query}, headers=headers, timeout=60)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    nodes = {n["id"]: (n["lon"], n["lat"]) for n in data["elements"] if n["type"] == "node"}
+                    ways = []
+                    for w in data["elements"]:
+                        if w["type"] == "way" and "nodes" in w:
+                            coords = [nodes[nid] for nid in w["nodes"] if nid in nodes]
+                            if len(coords) > 1:
+                                ways.append({"geometry": LineString(coords), "highway": w["tags"].get("highway")})
+                    if ways:
+                        roads = gpd.GeoDataFrame(ways, crs="EPSG:4326")
+                        logger.info(f"Raw fallback success on mirror {mirror}: {len(roads)} roads")
+                        return roads
+                else:
+                    logger.warning(f"Raw fallback mirror {mirror} returned status {resp.status_code}")
+            except Exception as e:
+                logger.error(f"Raw fallback failed on mirror {mirror}: {e}")
 
         return gpd.GeoDataFrame()
 
@@ -1429,7 +1459,11 @@ async def run_correlations(
 app.mount("/detections", StaticFiles(directory=DETECTION_DIR), name="detections")
 
 # Serve frontend
-app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+frontend_dir = os.path.join(BASE_DIR, "frontend")
+if os.path.isdir(frontend_dir):
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+else:
+    logger.warning(f"Frontend directory '{frontend_dir}' not found — skipping static mount.")
 
 
 if __name__ == "__main__":
