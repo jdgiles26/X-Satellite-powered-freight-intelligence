@@ -99,6 +99,7 @@
                         <div class="card glass-panel missions-card">
                             <div class="card-header">
                                 <h3><i class="fas fa-crosshairs text-primary"></i> Mission Parameters</h3>
+                                <button class="btn-icon toggle-collapse-btn" title="Toggle Minimize"><i class="fas fa-chevron-up"></i></button>
                             </div>
                             <div class="mission-presets">
                                 <div class="control-group mb-2">
@@ -148,7 +149,10 @@
                         <div class="card glass-panel feed-card">
                             <div class="card-header">
                                 <h3><i class="fas fa-bell text-alert"></i> Signal Feed</h3>
-                                <button id="refresh-feed" class="btn-icon"><i class="fas fa-sync"></i></button>
+                                <div class="header-actions">
+                                    <button id="refresh-feed" class="btn-icon"><i class="fas fa-sync"></i></button>
+                                    <button class="btn-icon toggle-collapse-btn" title="Toggle Minimize"><i class="fas fa-chevron-up"></i></button>
+                                </div>
                             </div>
                             <div id="alert-feed-compact" class="feed-container scrollable">
                                 <div class="loading-state">Syncing spectral link...</div>
@@ -161,7 +165,10 @@
                         <div class="card glass-panel intel-card">
                             <div class="card-header">
                                 <h3><i class="fas fa-robot text-accent"></i> ARGUS Intelligence</h3>
-                                <button id="close-chat" class="btn-icon"><i class="fas fa-times"></i></button>
+                                <div class="header-actions">
+                                    <button class="btn-icon toggle-collapse-btn" title="Toggle Minimize"><i class="fas fa-chevron-up"></i></button>
+                                    <button id="close-chat" class="btn-icon"><i class="fas fa-times"></i></button>
+                                </div>
                             </div>
                             <div id="ai-chat-body" class="intel-body scrollable"></div>
                             <div class="chat-input-bar">
@@ -176,7 +183,10 @@
                         <div class="card glass-panel intel-card">
                             <div class="card-header">
                                 <h3><i class="fas fa-microscope text-accent"></i> Target Intel Profile</h3>
-                                <button id="close-intel" class="btn-icon"><i class="fas fa-times"></i></button>
+                                <div class="header-actions">
+                                    <button class="btn-icon toggle-collapse-btn" title="Toggle Minimize"><i class="fas fa-chevron-up"></i></button>
+                                    <button id="close-intel" class="btn-icon"><i class="fas fa-times"></i></button>
+                                </div>
                             </div>
                             <div id="intel-content" class="intel-body scrollable">
                                 <!-- Populated dynamically -->

@@ -667,6 +667,12 @@ h1 {
     width: 340px;
     display: flex;
     flex-direction: column;
+    transition: bottom 0.3s ease, height 0.3s ease;
+}
+
+.hud-overlay-right.collapsed {
+    bottom: auto !important;
+    height: auto !important;
 }
 
 .hud-overlay-right .card {
@@ -681,6 +687,29 @@ h1 {
     height: 100% !important;
     flex: 1;
     overflow-y: auto;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card.collapsed {
+    height: auto !important;
+    max-height: fit-content !important;
+}
+
+.card.collapsed .card-header {
+    border-bottom: none;
+}
+
+.card.collapsed .mission-presets,
+.card.collapsed .feed-container,
+.card.collapsed .intel-body,
+.card.collapsed .chat-input-bar,
+.card.collapsed .chat-quick-actions {
+    display: none !important;
 }
 
 /* Cards & Components */

@@ -243,6 +243,29 @@ class DrishXDashboard {
             this.notify('Globe corridors toggled.', 'info');
         });
 
+        // Collapse toggle buttons for overlays
+        document.querySelectorAll('.toggle-collapse-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const card = btn.closest('.card');
+                const overlay = btn.closest('.hud-overlay-left, .hud-overlay-right');
+                if (card) {
+                    const isCollapsed = card.classList.toggle('collapsed');
+                    if (overlay) {
+                        overlay.classList.toggle('collapsed', isCollapsed);
+                    }
+                    // Toggle chevron icon
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        if (isCollapsed) {
+                            icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+                        } else {
+                            icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                        }
+                    }
+                }
+            });
+        });
+
         // Keyboard shortcuts
         this.setupKeyboardShortcuts();
 
