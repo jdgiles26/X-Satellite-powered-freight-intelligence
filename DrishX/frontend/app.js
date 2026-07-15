@@ -567,7 +567,7 @@ class DrishXDashboard {
                                 }
                             }, 1500);
                         } else if (evt.type === 'error') {
-                            this.notify(evt.status === 'error' ? evt.message : "Analysis failed.", "error");
+                            this.notify(evt.message || "Analysis failed.", "error");
                             appendLog(`ERROR: ${evt.message}`);
                             setTimeout(() => hud.classList.add('hidden'), 3000);
                         }

@@ -25,7 +25,13 @@ class GlobeView {
             return;
         }
 
-        this.globe = GlobeGL()
+        const GlobeConstructor = window.Globe || window.GlobeGL;
+        if (!GlobeConstructor) {
+            console.error('Globe.gl library not loaded.');
+            return;
+        }
+
+        this.globe = GlobeConstructor()
             (container)
             .backgroundColor('#05080b')
             .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
